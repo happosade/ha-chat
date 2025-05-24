@@ -1,14 +1,60 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# HA-Chat
+
+A Next.js chat application that connects to LLMs via OpenAI-like APIs and supports MCP (Model Context Protocol) tools.
+
+## Features
+
+- Chat interface with real-time messaging
+- Support for OpenAI-compatible API endpoints
+- Model Context Protocol (MCP) tools integration
+- Configuration management for LLM endpoints and tokens
+- SQLite database for persistent storage
+
+## Tech Stack
+
+- **Framework**: Next.js with TypeScript and App Router
+- **Database**: Prisma with SQLite
+- **UI**: Tailwind CSS
+- **Forms**: React Hook Form with Zod validation
+- **API Integration**: OpenAI SDK
 
 ## Getting Started
 
-First, run the development server:
+First, clone the repository and install dependencies:
+
+```bash
+npm install
+```
+
+Next, set up the database:
+
+```bash
+npx prisma db push
+```
+
+Then, run the development server:
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
+```
+
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
+
+## Configuration
+
+The application allows you to configure:
+
+1. **LLM Endpoints**: Connect to OpenAI or compatible API endpoints
+2. **API Keys**: Securely store your API tokens
+3. **MCP Tools**: Define custom tools that extend the LLM's capabilities
+
+## MCP Tool Integration
+
+The Model Context Protocol allows for function calling capabilities with your LLM. Add tools with:
+
+- Name and description
+- Endpoint URL for tool execution
+- JSON schema defining the tool's parameters
 pnpm dev
 # or
 bun dev

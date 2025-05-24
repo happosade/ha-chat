@@ -1,0 +1,43 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Config {
+  id           Int     @id @default(autoincrement())
+  name         String  @unique
+  llmEndpoint  String
+  llmModel     String
+  apiKey       String
+  mcpSupport   Boolean @default(false)
+  mcpEndpoint  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Tool {
+  id          Int      @id @default(autoincrement())
+  name        String
+  description String
+  endpoint    String
+  parameters  String   // JSON string of parameters schema
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  role      String   // user, assistant, system
+  content   String
+  configId  Int
+  toolCalls String?  // JSON string of tool calls
+  sessionId String?  // Group messages by session ID
+  createdAt DateTime @default(now())
+}
