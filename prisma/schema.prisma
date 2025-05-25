@@ -39,6 +39,6 @@ model ChatMessage {
   content   String
   configId  Int
   toolCalls String?  // JSON string of tool calls
-  sessionId String?  // Group messages by session ID
+  session_id String?  // Group messages by session ID
   createdAt DateTime @default(now())
 }

@@ -1,0 +1,171 @@
+# Testing Guide for HA-Chat
+
+This document provides guidelines for running and writing tests for the HA-Chat application.
+
+## Test Structure
+
+The test suite is organized into the following categories:
+
+1. **Unit Tests** - Tests for individual utility functions and modules
+2. **Component Tests** - Tests for React components
+3. **API Route Tests** - Tests for Next.js API routes
+4. **End-to-End Tests** - Cypress tests for full application flows
+
+## Running Tests
+
+### Unit and Component Tests with Jest
+
+To run all Jest tests:
+
+```bash
+npm test
+```
+
+To run tests in watch mode during development:
+
+```bash
+npm run test:watch
+```
+
+To generate a coverage report:
+
+```bash
+npm run test:coverage
+```
+
+### End-to-End Tests with Cypress
+
+To open the Cypress Test Runner:
+
+```bash
+npm run cypress
+```
+
+To run Cypress tests headlessly:
+
+```bash
+npm run cypress:headless
+```
+
+## Writing Tests
+
+### Unit Tests
+
+Unit tests should focus on testing a single function or module in isolation. Example:
+
+```typescript
+// Testing a utility function
+import { cn } from '@/lib/utils';
+
+describe('cn utility function', () => {
+  it('merges class names correctly', () => {
+    const result = cn('class1', 'class2');
+    expect(result).toBe('class1 class2');
+  });
+});
+```
+
+### Component Tests
+
+Component tests should verify that components render correctly and respond to user interactions:
+
+```typescript
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { Button } from '@/components/ui/button';
+
+describe('Button Component', () => {
+  it('renders correctly', () => {
+    render(<Button>Click me</Button>);
+    expect(screen.getByText('Click me')).toBeInTheDocument();
+  });
+  
+  it('calls onClick when clicked', async () => {
+    const handleClick = jest.fn();
+    render(<Button onClick={handleClick}>Click me</Button>);
+    
+    await userEvent.click(screen.getByText('Click me'));
+    expect(handleClick).toHaveBeenCalledTimes(1);
+  });
+});
+```
+
+### API Route Tests
+
+API route tests should verify the behavior of API endpoints:
+
+```typescript
+import { NextRequest } from 'next/server';
+import { GET } from '@/app/api/sessions/route';
+
+describe('Sessions API Route', () => {
+  it('returns a list of sessions', async () => {
+    const req = new NextRequest('http://localhost:3000/api/sessions');
+    const response = await GET(req);
+    
+    expect(response.status).toBe(200);
+    const data = await response.json();
+    expect(Array.isArray(data)).toBe(true);
+  });
+});
+```
+
+### End-to-End Tests
+
+E2E tests should test complete user flows:
+
+```typescript
+describe('Chat Flow', () => {
+  it('allows sending a message and receiving a response', () => {
+    cy.visit('/chat/1');
+    cy.get('textarea').type('Hello, world!');
+    cy.get('button').contains('Send').click();
+    
+    cy.contains('Hello, world!').should('be.visible');
+    cy.contains('I am an AI assistant').should('be.visible');
+  });
+});
+```
+
+## Mocking
+
+The application uses Jest mocks for various dependencies:
+
+1. **Prisma** - Mock database operations
+2. **OpenAI** - Mock LLM API calls
+3. **Next.js** - Mock router, headers, and server components
+
+Example of mocking Prisma:
+
+```typescript
+jest.mock('@/lib/prisma', () => ({
+  __esModule: true,
+  default: {
+    config: {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 1,
+        name: 'Test Config',
+      }),
+    },
+  },
+}));
+```
+
+## Best Practices
+
+1. **Follow TDD principles** - Write tests before implementing features
+2. **Isolate tests** - Each test should be independent of others
+3. **Use descriptive test names** - Make it clear what each test is verifying
+4. **Test edge cases** - Include tests for error conditions and boundary values
+5. **Keep tests focused** - Each test should verify a single behavior
+6. **Use proper assertions** - Use the most specific assertion for each case
+7. **Clean up after tests** - Reset mocks and global state between tests
+
+## Continuous Integration
+
+Tests are run automatically in CI/CD pipelines on GitHub. The workflow:
+
+1. **Lint** - Check code style and quality
+2. **Unit Tests** - Run Jest tests
+3. **E2E Tests** - Run Cypress tests headlessly
+4. **Coverage** - Generate and report test coverage

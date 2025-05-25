@@ -17,7 +17,7 @@ export async function GET(
     }
 
     const messages = await prisma.chatMessage.findMany({
-      where: { session_id: sessionId },
+      where: { sessionId: sessionId },
       orderBy: { createdAt: 'asc' },
     });
 
@@ -47,7 +47,7 @@ export async function DELETE(
     }
 
     await prisma.chatMessage.deleteMany({
-      where: { session_id: sessionId },
+      where: { sessionId: sessionId },
     });
 
     return NextResponse.json({ success: true });

@@ -1,0 +1,169 @@
+import { NextRequest, NextResponse } from 'next/server';
+import OpenAI from 'openai';
+import type { ChatCompletionTool } from 'openai/resources/chat/completions';
+import { Config, Prisma } from '@prisma/client';
+import prisma from '@/lib/prisma';
+import { z } from 'zod';
+
+// Schema for API request validation
+const requestSchema = z.object({
+  messages: z.array(z.object({
+    role: z.enum(['user', 'assistant', 'system']),
+    content: z.string(),
+  })),
+  configId: z.number(),
+  toolIds: z.array(z.number()).optional(),
+  sessionId: z.string().optional(),
+});
+
+export async function POST(req: NextRequest) {
+  try {
+    // Parse and validate request
+    const body = await req.json();
+    const { messages, configId, toolIds = [], sessionId } = requestSchema.parse(body);
+
+    // Get configuration
+    const config = await prisma.config.findUnique({
+      where: { id: configId },
+    });
+
+    if (!config) {
+      return NextResponse.json(
+        { error: 'Configuration not found' },
+        { status: 404 }
+      );
+    }
+
+    // Add system prompt to messages if it exists and there isn't already a system message
+    const hasSystemMessage = messages.some((m) => m.role === 'system');
+    const allMessages = (!hasSystemMessage && config.systemPrompt)
+      ? [{ role: 'system' as const, content: config.systemPrompt }, ...messages]
+      : messages;
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: config.apiKey,
+      baseURL: config.llmEndpoint || undefined,
+    });
+
+    // If MCP is enabled and tools are selected, get tool configurations
+    let tools: ChatCompletionTool[] = [];
+    let toolCallHandler: ((toolCalls: any[]) => Promise<any>) | undefined;
+    
+    if (config.mcpSupport && toolIds.length > 0) {
+      const selectedTools = await prisma.tool.findMany({
+        where: { id: { in: toolIds } },
+      });
+
+      tools = selectedTools.map(tool => ({
+        type: 'function' as const,
+        function: {
+          name: tool.name,
+          description: tool.description,
+          parameters: JSON.parse(tool.parameters),
+        }
+      }));
+
+      toolCallHandler = async (toolCalls: any[]) => {
+        const mcpResponse = await fetch(config.mcpEndpoint!, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ toolCalls }),
+        });
+
+        if (!mcpResponse.ok) {
+          throw new Error('Failed to execute tool calls via MCP');
+        }
+
+        return mcpResponse.json();
+      };
+    }
+
+    // Create chat completion
+    const response = await openai.chat.completions.create({
+      messages: allMessages,
+      model: config.llmModel,
+      tools: tools.length > 0 ? tools : undefined,
+      tool_choice: tools.length > 0 ? 'auto' : undefined,
+    });
+
+    const message = response.choices[0].message;
+
+    // Handle tool calls if present
+    if (message.tool_calls && toolCallHandler) {
+      const toolResults = await toolCallHandler(message.tool_calls);
+      
+      // Store tool calls with the message
+      const toolCallsJson = JSON.stringify(message.tool_calls.map(call => ({
+        ...call,
+        result: toolResults[call.id],
+      })));
+
+      // Save message to database if session exists
+      if (sessionId) {
+        const data: Prisma.ChatMessageCreateInput = {
+          role: message.role,
+          content: message.content || '',
+          toolCalls: toolCallsJson,
+          config: {
+            connect: { id: configId },
+          },
+          session_id: sessionId,
+        };
+        await prisma.chatMessage.create({ data });
+      }
+
+      return NextResponse.json({
+        message: {
+          role: message.role,
+          content: message.content || '',
+          toolCalls: toolCallsJson,
+        },
+      });
+    }
+
+    // Save message to database if session exists
+    if (sessionId) {
+      const data: Prisma.ChatMessageCreateInput = {
+        role: message.role,
+        content: message.content || '',
+        config: {
+          connect: { id: configId },
+        },
+        session_id: sessionId,
+      };
+      await prisma.chatMessage.create({ data });
+    }
+
+    return NextResponse.json({
+      message: {
+        role: message.role,
+        content: message.content || '',
+      },
+    });
+
+  } catch (error) {
+    console.error('Error in chat API:', error);
+    
+    // Handle different types of errors
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid request format', details: error.errors },
+        { status: 400 }
+      );
+    }
+
+    if (error instanceof OpenAI.APIError) {
+      return NextResponse.json(
+        { error: 'LLM API error', message: error.message },
+        { status: error.status || 500 }
+      );
+    }
+
+    // Generic error handler
+    return NextResponse.json(
+      { error: 'Internal server error', message: error instanceof Error ? error.message : 'Unknown error' },
+      { status: 500 }
+    );
+  }
+}

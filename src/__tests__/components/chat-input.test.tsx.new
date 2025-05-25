@@ -1,0 +1,88 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { ChatInput } from '@/components/chat-input';
+
+describe('ChatInput Component', () => {
+  const mockSendMessage = jest.fn();
+  
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('renders the input field correctly', () => {
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} />);
+    
+    expect(screen.getByPlaceholderText('Type your message here...')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
+  });
+
+  it('shows MCP tools message when hasMcpTools is true', () => {
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} hasMcpTools={true} />);
+    
+    expect(screen.getByText(/This chat has access to MCP tools/i)).toBeInTheDocument();
+  });
+
+  it('does not show MCP tools message when hasMcpTools is false', () => {
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} hasMcpTools={false} />);
+    
+    expect(screen.queryByText(/This chat has access to MCP tools/i)).not.toBeInTheDocument();
+  });
+
+  it('disables the send button when isLoading is true', () => {
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={true} />);
+    
+    expect(screen.getByRole('button', { name: /send/i })).toBeDisabled();
+  });
+
+  it('calls onSendMessage when the form is submitted', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} />);
+    
+    const input = screen.getByPlaceholderText('Type your message here...');
+    const button = screen.getByRole('button', { name: /send/i });
+    
+    await user.type(input, 'Hello, world!');
+    await user.click(button);
+    
+    expect(mockSendMessage).toHaveBeenCalledWith('Hello, world!');
+  });
+
+  it('clears the input after sending a message', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} />);
+    
+    const input = screen.getByPlaceholderText('Type your message here...') as HTMLTextAreaElement;
+    const button = screen.getByRole('button', { name: /send/i });
+    
+    await user.type(input, 'Hello, world!');
+    expect(input.value).toBe('Hello, world!');
+    
+    await user.click(button);
+    expect(input.value).toBe('');
+  });
+
+  it('handles keyboard shortcuts', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} />);
+    
+    const input = screen.getByPlaceholderText('Type your message here...');
+    
+    await user.type(input, 'Hello, world!');
+    await user.keyboard('{Enter}');
+    
+    expect(mockSendMessage).toHaveBeenCalledWith('Hello, world!');
+  });
+
+  it('does not submit when Enter is pressed with shift key', async () => {
+    const user = userEvent.setup();
+    render(<ChatInput onSendMessage={mockSendMessage} isLoading={false} />);
+    
+    const input = screen.getByPlaceholderText('Type your message here...');
+    
+    await user.type(input, 'Hello, world!');
+    await user.keyboard('{Shift>}{Enter}{/Shift}');
+    
+    expect(mockSendMessage).not.toHaveBeenCalled();
+  });
+});

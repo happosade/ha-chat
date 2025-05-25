@@ -1,0 +1,12 @@
+{
+  "id": 1,
+  "name": "Default Configuration",
+  "apiKey": "test-api-key",
+  "llmEndpoint": "https://api.example.com",
+  "llmModel": "gpt-3.5-turbo",
+  "systemPrompt": "You are a helpful assistant",
+  "mcpSupport": false,
+  "mcpEndpoint": null,
+  "createdAt": "2025-05-20T12:00:00.000Z",
+  "updatedAt": "2025-05-20T12:00:00.000Z"
+}

@@ -9,6 +9,11 @@ This is a Next.js chat application that connects to LLMs via OpenAI-like APIs an
 - OpenAI SDK for LLM integration
 - React Hook Form with Zod for form validation
 - Tailwind CSS for styling
+- Add tests with Jest and React Testing Library when adding new features
+- Cypress for end-to-end testing
+- ESLint and Prettier for code quality and formatting
+- Follow TTD (Test-Driven Development) practices
+- Follow best practices for security, including secure storage of API keys and tokens
 
 ## Key Components
 

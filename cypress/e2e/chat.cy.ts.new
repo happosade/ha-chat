@@ -1,0 +1,68 @@
+describe('Chat Application', () => {
+  beforeEach(() => {
+    // Mock API responses
+    cy.intercept('GET', '/api/config/1', { fixture: 'config.json' }).as('getConfig');
+    cy.intercept('GET', '/api/sessions', { fixture: 'sessions.json' }).as('getSessions');
+    cy.intercept('POST', '/api/sessions', { fixture: 'new-session.json' }).as('createSession');
+    cy.intercept('POST', '/api/chat', { fixture: 'chat-response.json' }).as('sendMessage');
+    
+    // Visit the chat page
+    cy.visit('/chat/1');
+  });
+
+  it('should load the chat interface', () => {
+    // Verify UI components are loaded
+    cy.get('h1').should('contain', 'Chat');
+    cy.get('textarea[placeholder="Type your message here..."]').should('exist');
+    cy.get('button').contains('Send').should('exist');
+  });
+
+  it('should display session selector', () => {
+    cy.wait('@getSessions');
+    cy.get('select').should('exist');
+    cy.get('option').should('have.length.at.least', 1);
+  });
+
+  it('should send a message and receive a response', () => {
+    // Type and send a message
+    cy.get('textarea[placeholder="Type your message here..."]').type('Hello, how are you?');
+    cy.get('button').contains('Send').click();
+    
+    // Verify API call
+    cy.wait('@sendMessage');
+    
+    // Verify message is displayed
+    cy.contains('Hello, how are you?').should('be.visible');
+    cy.contains('I am an AI assistant').should('be.visible');
+  });
+
+  it('should create a new session', () => {
+    // Click new session button
+    cy.get('button').contains('New Session').click();
+    cy.wait('@createSession');
+    
+    // Verify new session is selected
+    cy.get('select').should('have.value', 'new-session-id');
+  });
+
+  it('should disable send button when loading', () => {
+    // Intercept with delay to simulate loading
+    cy.intercept('POST', '/api/chat', (req) => {
+      req.reply({
+        delay: 1000,
+        fixture: 'chat-response.json',
+      });
+    }).as('slowResponse');
+    
+    // Type and send a message
+    cy.get('textarea[placeholder="Type your message here..."]').type('Hello');
+    cy.get('button').contains('Send').click();
+    
+    // Verify button is disabled during loading
+    cy.get('button').contains('Send').should('be.disabled');
+    
+    // Wait for response and verify button is enabled again
+    cy.wait('@slowResponse');
+    cy.get('button').contains('Send').should('not.be.disabled');
+  });
+});

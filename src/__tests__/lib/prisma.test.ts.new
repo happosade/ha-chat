@@ -1,0 +1,49 @@
+import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
+
+jest.mock('@prisma/client', () => {
+  return {
+    PrismaClient: jest.fn().mockImplementation(() => {
+      return {
+        $connect: jest.fn(),
+        $disconnect: jest.fn(),
+      };
+    }),
+  };
+});
+
+describe('Prisma Client Singleton', () => {
+  it('should be an instance of PrismaClient', () => {
+    expect(prisma).toBeDefined();
+    expect(PrismaClient).toHaveBeenCalledTimes(1);
+  });
+
+  it('should be the same instance when imported multiple times', () => {
+    // Re-import to verify singleton pattern
+    jest.resetModules();
+    const { default: prisma1 } = require('@/lib/prisma');
+    const { default: prisma2 } = require('@/lib/prisma');
+    
+    expect(prisma1).toBe(prisma2);
+  });
+
+  it('should have all expected Prisma client models', () => {
+    // Add specific properties to the mock implementation
+    const mockClient = {
+      config: {},
+      chatMessage: {},
+      tool: {},
+      $connect: jest.fn(),
+      $disconnect: jest.fn(),
+    };
+    
+    (PrismaClient as jest.Mock).mockImplementation(() => mockClient);
+    
+    jest.resetModules();
+    const { default: newPrisma } = require('@/lib/prisma');
+    
+    expect(newPrisma).toHaveProperty('config');
+    expect(newPrisma).toHaveProperty('chatMessage');
+    expect(newPrisma).toHaveProperty('tool');
+  });
+});

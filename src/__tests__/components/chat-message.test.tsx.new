@@ -1,0 +1,118 @@
+import React from 'react';
+import { render, screen } from '@testing-library/react';
+import { ChatMessage } from '@/components/chat-message';
+
+describe('ChatMessage Component', () => {
+  it('renders user message correctly', () => {
+    render(
+      <ChatMessage
+        message={{ role: 'user', content: 'Hello, how are you?' }}
+      />
+    );
+    
+    expect(screen.getByText('Hello, how are you?')).toBeInTheDocument();
+    expect(screen.getByText('You')).toBeInTheDocument();
+  });
+
+  it('renders assistant message correctly', () => {
+    render(
+      <ChatMessage
+        message={{ role: 'assistant', content: 'I am doing well, thank you!' }}
+      />
+    );
+    
+    expect(screen.getByText('I am doing well, thank you!')).toBeInTheDocument();
+    expect(screen.getByText('Assistant')).toBeInTheDocument();
+  });
+
+  it('renders system message correctly', () => {
+    render(
+      <ChatMessage
+        message={{ role: 'system', content: 'System message' }}
+      />
+    );
+    
+    expect(screen.getByText('System message')).toBeInTheDocument();
+    expect(screen.getByText('System')).toBeInTheDocument();
+  });
+
+  it('renders markdown content correctly', () => {
+    render(
+      <ChatMessage
+        message={{ role: 'assistant', content: '**Bold text** and *italic text*' }}
+      />
+    );
+    
+    expect(screen.getByText('Bold text')).toHaveStyle('font-weight: bold');
+    expect(screen.getByText('italic text')).toHaveStyle('font-style: italic');
+  });
+
+  it('renders code blocks correctly', () => {
+    render(
+      <ChatMessage
+        message={{ 
+          role: 'assistant', 
+          content: '```javascript\nconst hello = "world";\n```' 
+        }}
+      />
+    );
+    
+    expect(screen.getByText('const hello = "world";')).toBeInTheDocument();
+    expect(screen.getByText('javascript')).toBeInTheDocument();
+  });
+
+  it('renders links correctly', () => {
+    render(
+      <ChatMessage
+        message={{ 
+          role: 'assistant', 
+          content: 'Visit [example](https://example.com)' 
+        }}
+      />
+    );
+    
+    const link = screen.getByText('example');
+    expect(link).toBeInTheDocument();
+    expect(link.tagName).toBe('A');
+    expect(link).toHaveAttribute('href', 'https://example.com');
+  });
+
+  it('renders tool calls when provided', () => {
+    const toolCalls = JSON.stringify([
+      {
+        id: 'call_123',
+        type: 'function',
+        function: {
+          name: 'get_weather',
+          arguments: '{"location":"New York"}',
+        },
+        result: 'Sunny and 75°F in New York',
+      },
+    ]);
+
+    render(
+      <ChatMessage
+        message={{ 
+          role: 'assistant', 
+          content: 'Here is the weather:', 
+          toolCalls,
+        }}
+      />
+    );
+    
+    expect(screen.getByText('Here is the weather:')).toBeInTheDocument();
+    expect(screen.getByText('get_weather')).toBeInTheDocument();
+    expect(screen.getByText(/"location": "New York"/)).toBeInTheDocument();
+    expect(screen.getByText('Sunny and 75°F in New York')).toBeInTheDocument();
+  });
+
+  it('handles messages with empty content', () => {
+    render(
+      <ChatMessage
+        message={{ role: 'assistant', content: '' }}
+      />
+    );
+    
+    expect(screen.getByText('Assistant')).toBeInTheDocument();
+  });
+});
