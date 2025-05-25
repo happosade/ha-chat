@@ -16,10 +16,10 @@ export async function GET(req: NextRequest) {
 
     // Get all unique session IDs for the config and count their messages
     const messages = await prisma.chatMessage.groupBy({
-      by: ['sessionId'],
+      by: ['session_id'],
       where: {
         configId: parseInt(configId),
-        sessionId: { not: null },
+        session_id: { not: null },
       },
       _count: {
         _all: true,
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
     });
 
     const sessions = messages.map(msg => ({
-      id: msg.sessionId!,
+      id: msg.session_id!,
       messages: msg._count._all,
     }));
 

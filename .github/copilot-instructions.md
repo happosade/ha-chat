@@ -1,5 +1,3 @@
-<!-- Use this file to provide workspace-specific custom instructions to Copilot. For more details, visit https://code.visualstudio.com/docs/copilot/copilot-customization#_use-a-githubcopilotinstructionsmd-file -->
-
 # HA-Chat Project
 
 This is a Next.js chat application that connects to LLMs via OpenAI-like APIs and supports MCP (Model Context Protocol) tools. The application uses:
@@ -14,6 +12,7 @@ This is a Next.js chat application that connects to LLMs via OpenAI-like APIs an
 - ESLint and Prettier for code quality and formatting
 - Follow TTD (Test-Driven Development) practices
 - Follow best practices for security, including secure storage of API keys and tokens
+- Use underscore naming
 
 ## Key Components
 
@@ -22,3 +21,9 @@ This is a Next.js chat application that connects to LLMs via OpenAI-like APIs an
 - MCP tools integration
 - SQLite database for storing configurations
 - SQLite database for storing chat messages and user data
+
+## Scope
+
+- This project aims to create easy to use chat interface to local LLMs running in browser and interacting with MCP
+- The primary goal is to communicate with home assistant
+- Each LLM backend should be able to get different system prompt
