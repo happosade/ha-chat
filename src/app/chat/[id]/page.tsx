@@ -159,7 +159,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       content,
     };
 
-    console.log('Adding user message to chat:', userMessage);
+    console.log('Adding user message to chat with id:', userMessage.id, 'and role:', userMessage.role);
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setError(null);
