@@ -12,7 +12,7 @@ This is a Next.js chat application that connects to LLMs via OpenAI-like APIs an
 - ESLint and Prettier for code quality and formatting
 - Follow TTD (Test-Driven Development) practices
 - Follow best practices for security, including secure storage of API keys and tokens
-- User underscore naming
+- Use underscore naming
 
 ## Key Components
 
