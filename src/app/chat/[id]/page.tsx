@@ -145,13 +145,12 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }, [configId, searchParams]);
 
   const handleSendMessage = async (content: string) => {
-    console.log('handleSendMessage called with content:', content);
-
     if (!content.trim()) {
       console.warn('Empty message received, ignoring');
       return;
     }
 
+    console.log('handleSendMessage called with content:', content);
     // Add user message to the chat immediately
     const userMessage: ChatMessage = {
       id: Date.now(),
