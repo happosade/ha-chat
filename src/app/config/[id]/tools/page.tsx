@@ -1,13 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { Button } from '@/components/ui/button';
 
-export default function ConfigToolsPage({ params }: { params: { id: string } }) {
+interface PageParams {
+  id: string;
+  [key: string]: string | string[];
+}
+
+export default function ConfigToolsPage({ params }: { params: Promise<PageParams> | PageParams }) {
   const router = useRouter();
+  const unwrappedParams = React.use(params as Promise<PageParams>);
+  const configId = unwrappedParams.id;
   const [config, setConfig] = useState<any>(null);
   const [allTools, setAllTools] = useState<any[]>([]);
   const [configuredTools, setConfiguredTools] = useState<any[]>([]);
@@ -18,7 +25,7 @@ export default function ConfigToolsPage({ params }: { params: { id: string } }) 
     const fetchData = async () => {
       try {
         // Fetch the configuration
-        const configResponse = await fetch(`/api/config/${params.id}`);
+        const configResponse = await fetch(`/api/config/${configId}`);
         if (!configResponse.ok) {
           throw new Error('Failed to load configuration');
         }
@@ -52,10 +59,10 @@ export default function ConfigToolsPage({ params }: { params: { id: string } }) 
     };
 
     fetchData();
-  }, [params.id]);
+  }, [configId]);
 
   const handleAddTool = (toolId: number) => {
-    router.push(`/chat/${params.id}?tools=${toolId}`);
+    router.push(`/chat/${configId}?tools=${toolId}`);
   };
 
   if (isLoading) {
@@ -74,7 +81,7 @@ export default function ConfigToolsPage({ params }: { params: { id: string } }) 
         <div className="text-center">
           <h1 className="text-2xl font-bold text-red-500 mb-4">Error</h1>
           <p className="mb-6">{error}</p>
-          <Link href={`/config/${params.id}`}>
+          <Link href={`/config/${configId}`}>
             <Button>Back to Configuration</Button>
           </Link>
         </div>
@@ -98,7 +105,7 @@ export default function ConfigToolsPage({ params }: { params: { id: string } }) 
             )}
           </div>
           <div className="flex gap-2">
-            <Link href={`/config/${params.id}`}>
+            <Link href={`/config/${configId}`}>
               <Button variant="outline">Back to Config</Button>
             </Link>
             <Link href="/tools">
@@ -134,7 +141,7 @@ export default function ConfigToolsPage({ params }: { params: { id: string } }) 
                       </p>
                     </div>
                     <div>
-                      <Link href={`/chat/${params.id}?tools=${tool.id}`}>
+                      <Link href={`/chat/${configId}?tools=${tool.id}`}>
                         <Button size="sm">
                           Start Chat with This Tool
                         </Button>

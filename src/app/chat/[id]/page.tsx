@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { PulseLoader } from 'react-spinners';
 
 import { ChatList } from '@/components/chat-message-enhanced';
 import { ChatInput } from '@/components/chat-input';
@@ -35,10 +36,11 @@ const formatSessionDate = (sessionId: string) => {
 };
 
 export default function ChatPage({ params }: { params: { id: string } }) {
+  // Unwrap params using React.use() as recommended by Next.js
+  const unwrappedParams = React.use(params as any) as { id: string };
   const router = useRouter();
   const searchParams = useSearchParams();
-  const unwrappedParams = React.use(params);
-  const configId = unwrappedParams.id; // Use React.use to unwrap params
+  const [configId, setConfigId] = useState<string>(unwrappedParams.id);
   const [config, setConfig] = useState<any>(null);
   const [tools, setTools] = useState<any[]>([]);
   const [selectedTools, setSelectedTools] = useState<number[]>([]);
@@ -48,6 +50,11 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  // Update configId when params.id changes
+  useEffect(() => {
+    setConfigId(unwrappedParams.id);
+  }, [unwrappedParams.id]);
 
   // Initialize a new session
   useEffect(() => {
@@ -140,7 +147,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   const handleSendMessage = async (content: string) => {
     if (!content.trim()) return;
 
-    // Add user message to the chat
+    // Add user message to the chat immediately
     const userMessage: ChatMessage = {
       id: Date.now(),
       role: 'user',
@@ -219,6 +226,8 @@ Be proactive about using tools when they would help answer the user's question m
     } catch (error) {
       console.error('Error sending message:', error);
       setError('Failed to send message. Please try again.');
+      // Remove the user message if there was an error
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -327,8 +336,8 @@ Be proactive about using tools when they would help answer the user's question m
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b p-4 flex items-center justify-between">
+    <div className="flex flex-col h-[100dvh]">
+      <header className="border-b p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div>
           <h1 className="text-xl font-bold">{config.name}</h1>
           <p className="text-sm text-gray-500">{config.llmModel}</p>
@@ -379,7 +388,7 @@ Be proactive about using tools when they would help answer the user's question m
       <div className="flex flex-1 overflow-hidden">
         {/* Main chat area */}
         <div className="flex-1 flex flex-col">
-          {config.mcpSupport && tools.length > 0 && (
+          {config?.mcpSupport && tools.length > 0 && (
             <div className="border-b p-4">
               <div className="flex items-center justify-between mb-2">
                 <h2 className="text-sm font-medium">MCP Tools</h2>
@@ -417,62 +426,32 @@ Be proactive about using tools when they would help answer the user's question m
 
           <div className="flex-1 overflow-y-auto">
             {isLoadingSession ? (
-              <div className="flex h-full items-center justify-center">
-                <div className="text-center">
-                  <p className="text-gray-500">Loading conversation...</p>
-                </div>
-              </div>
-            ) : messages.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-center p-8">
-                <div className="max-w-md">
-                  <h2 className="text-xl font-semibold mb-2">Start a conversation</h2>
-                  <p className="text-gray-500 mb-4">
-                    Send a message to start chatting with the AI assistant using the
-                    {' '}{config.llmModel} model.
-                  </p>
-                  
-                  {config.mcpSupport && tools.length > 0 && (
-                    <div className="mt-6 p-4 border rounded-lg bg-muted/20">
-                      <h3 className="text-sm font-medium mb-2">MCP Tools Available</h3>
-                      <p className="text-xs text-gray-500 mb-3">
-                        This configuration supports Model Context Protocol tools. Select tools above to give the AI capabilities to:
-                      </p>
-                      <ul className="text-xs text-left list-disc pl-5 space-y-1">
-                        {tools.slice(0, 5).map(tool => (
-                          <li key={tool.id} className="text-gray-600">{tool.name} - {tool.description}</li>
-                        ))}
-                        {tools.length > 5 && <li className="text-gray-500">...and {tools.length - 5} more</li>}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center justify-center h-full">
+                <PulseLoader
+                  color="currentColor"
+                  size={8}
+                  margin={4}
+                  speedMultiplier={0.7}
+                />
               </div>
             ) : (
-              <ChatList messages={messages} />
+              <ChatList messages={messages} isLoading={isLoading} />
             )}
           </div>
 
           <ChatInput 
             onSendMessage={handleSendMessage} 
-            isLoading={isLoading} 
-            hasMcpTools={config.mcpSupport && selectedTools.length > 0}
-          />
-        </div>
-
-        {/* Session sidebar */}
-        <div className="w-72 border-l p-4 hidden md:block">
-          <SessionSelector 
-            configId={configId}
-            currentSessionId={sessionId}
-            sessions={savedSessions}
-            onSessionChange={(id) => {
-              setSessionId(id);
-              loadSession(id);
-            }}
-            onNewSession={createNewSession}
+            isLoading={isLoading}
+            hasMcpTools={config?.mcpSupport && selectedTools.length > 0} 
           />
         </div>
       </div>
+      
+      {error && (
+        <div className="bg-destructive text-destructive-foreground text-sm p-2 text-center">
+          {error}
+        </div>
+      )}
     </div>
   );
 }

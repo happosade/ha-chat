@@ -16,3 +16,4 @@ This is a Next.js chat application that connects to LLMs via OpenAI-like APIs an
 - Configuration for LLM endpoints and tokens
 - MCP tools integration
 - SQLite database for storing configurations
+- SQLite database for storing chat messages and user data

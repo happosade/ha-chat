@@ -18,6 +18,7 @@ model Config {
   apiKey       String
   mcpSupport   Boolean @default(false)
   mcpEndpoint  String?
+  systemPrompt String? @default("You are a helpful assistant.")
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 }

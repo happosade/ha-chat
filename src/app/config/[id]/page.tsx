@@ -1,14 +1,21 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 import { ConfigForm } from '@/components/config-form';
 import { Button } from '@/components/ui/button';
 
-export default function EditConfigPage({ params }: { params: { id: string } }) {
+interface PageParams {
+  id: string;
+  [key: string]: string | string[];
+}
+
+export default function EditConfigPage({ params }: { params: Promise<PageParams> | PageParams }) {
   const router = useRouter();
+  const unwrappedParams = React.use(params as Promise<PageParams>);
+  const configId = unwrappedParams.id;
   const [config, setConfig] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -17,7 +24,7 @@ export default function EditConfigPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     const fetchConfig = async () => {
       try {
-        const response = await fetch(`/api/config/${params.id}`);
+        const response = await fetch(`/api/config/${configId}`);
         if (response.ok) {
           const data = await response.json();
           setConfig(data);
@@ -33,14 +40,14 @@ export default function EditConfigPage({ params }: { params: { id: string } }) {
     };
 
     fetchConfig();
-  }, [params.id]);
+  }, [configId]);
 
   const handleSubmit = async (data: any) => {
     setIsSaving(true);
     setError(null);
 
     try {
-      const response = await fetch(`/api/config/${params.id}`, {
+      const response = await fetch(`/api/config/${configId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -65,7 +72,7 @@ export default function EditConfigPage({ params }: { params: { id: string } }) {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this configuration?')) {
       try {
-        const response = await fetch(`/api/config/${params.id}`, {
+        const response = await fetch(`/api/config/${configId}`, {
           method: 'DELETE',
         });
 
@@ -124,7 +131,7 @@ export default function EditConfigPage({ params }: { params: { id: string } }) {
 
         {config?.mcpSupport && (
           <div className="mt-6">
-            <Link href={`/config/${params.id}/tools`}>
+            <Link href={`/config/${configId}/tools`}>
               <Button variant="outline" className="w-full">
                 Configure MCP Tools
               </Button>

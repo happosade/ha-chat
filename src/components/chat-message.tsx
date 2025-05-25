@@ -27,36 +27,37 @@ export function ChatMessage({ message }: ChatMessageProps) {
   return (
     <div
       className={cn(
-        'flex w-full items-start gap-2 py-4',
+        'flex w-full items-start gap-2 py-2',
         isUser ? 'justify-end' : 'justify-start'
       )}
     >
       <div
         className={cn(
-          'rounded-lg px-4 py-2 max-w-[80%]',
+          'rounded-lg px-4 py-2 max-w-[85%] hover:bg-muted/90 transition-colors',
           isUser
             ? 'bg-primary text-primary-foreground'
             : 'bg-muted'
         )}
       >
-        <div className="prose dark:prose-invert break-words whitespace-pre-wrap">
+        <div className="prose dark:prose-invert break-words whitespace-pre-wrap text-sm leading-relaxed">
           {message.content}
         </div>
         
         {parsedToolCalls.length > 0 && (
-          <ToolCallsList 
-            toolCalls={parsedToolCalls.map(call => ({
-              id: call.id,
-              name: call.function?.name || 'Unknown Tool',
-              arguments: call.function?.arguments || '{}',
-              result: call.result
-            }))} 
-          />
+          <div className="mt-3 border-t border-border/50 pt-2">
+            <ToolCallsList 
+              toolCalls={parsedToolCalls.map((call: any) => ({
+                id: call.id,
+                name: call.function?.name || 'Unknown Tool',
+                arguments: call.function?.arguments || '{}',
+                result: call.result
+              }))} 
+            />
+          </div>
         )}
       </div>
     </div>
   );
-}
 }
 
 export function ChatList({ messages }: { messages: ChatMessageProps['message'][] }) {
