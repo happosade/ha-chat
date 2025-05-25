@@ -145,7 +145,12 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   }, [configId, searchParams]);
 
   const handleSendMessage = async (content: string) => {
-    if (!content.trim()) return;
+    console.log('handleSendMessage called with content:', content);
+
+    if (!content.trim()) {
+      console.warn('Empty message received, ignoring');
+      return;
+    }
 
     // Add user message to the chat immediately
     const userMessage: ChatMessage = {
@@ -154,6 +159,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
       content,
     };
 
+    console.log('Adding user message to chat:', userMessage);
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
     setError(null);
@@ -201,6 +207,14 @@ Be proactive about using tools when they would help answer the user's question m
         content: userMessage.content,
       });
 
+      // Log the request payload for debugging
+      console.log('Sending message to API:', {
+        messages: apiMessages,
+        configId: parseInt(configId),
+        toolIds: config?.mcpSupport ? selectedTools : [],
+        sessionId,
+      });
+
       // Send the request to the API
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -216,19 +230,29 @@ Be proactive about using tools when they would help answer the user's question m
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response from LLM');
+        const errorText = await response.text();
+        console.error(`API request failed with status ${response.status}: ${errorText}`);
+        throw new Error(`Failed to get response from LLM (status: ${response.status})`);
       }
 
       const data = await response.json();
+      console.log('Received response from API:', data);
       
       // Add the assistant's response to the chat
+      console.log('Adding assistant\'s response to chat:', data.message);
       setMessages((prev) => [...prev, data.message]);
     } catch (error) {
       console.error('Error sending message:', error);
-      setError('Failed to send message. Please try again.');
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('Detailed error:', errorMessage);
+
+      // Set a more descriptive error message
+      setError(`Failed to send message: ${errorMessage}. Please try again.`);
+
       // Remove the user message if there was an error
       setMessages((prev) => prev.slice(0, -1));
     } finally {
+      console.log('Setting loading state to false');
       setIsLoading(false);
     }
   };
