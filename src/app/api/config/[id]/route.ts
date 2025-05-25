@@ -3,12 +3,13 @@ import prisma from '@/lib/prisma';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
+    const idNum = Number(id);
     
-    if (isNaN(id)) {
+    if (isNaN(idNum)) {
       return NextResponse.json(
         { error: 'Invalid configuration ID' },
         { status: 400 }
@@ -16,7 +17,7 @@ export async function GET(
     }
 
     const config = await prisma.config.findUnique({
-      where: { id },
+      where: { id: idNum },
     });
 
     if (!config) {
@@ -47,14 +48,15 @@ export async function GET(
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
+    const idNum = Number(id);
     const body = await req.json();
     const { name, llmEndpoint, llmModel, apiKey, mcpSupport, mcpEndpoint } = body;
     
-    if (isNaN(id)) {
+    if (isNaN(idNum)) {
       return NextResponse.json(
         { error: 'Invalid configuration ID' },
         { status: 400 }
@@ -63,7 +65,7 @@ export async function PUT(
 
     // Check if the configuration exists
     const existingConfig = await prisma.config.findUnique({
-      where: { id },
+      where: { id: idNum },
     });
 
     if (!existingConfig) {
@@ -89,7 +91,7 @@ export async function PUT(
 
     // Update the configuration
     const updatedConfig = await prisma.config.update({
-      where: { id },
+      where: { id: idNum },
       data: {
         name,
         llmEndpoint,
@@ -121,12 +123,13 @@ export async function PUT(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const id = Number(params.id);
+    const { id } = await params;
+    const idNum = Number(id);
     
-    if (isNaN(id)) {
+    if (isNaN(idNum)) {
       return NextResponse.json(
         { error: 'Invalid configuration ID' },
         { status: 400 }
@@ -135,7 +138,7 @@ export async function DELETE(
 
     // Check if the configuration exists
     const existingConfig = await prisma.config.findUnique({
-      where: { id },
+      where: { id: idNum },
     });
 
     if (!existingConfig) {
@@ -147,7 +150,7 @@ export async function DELETE(
 
     // Delete the configuration
     await prisma.config.delete({
-      where: { id },
+      where: { id: idNum },
     });
 
     return NextResponse.json({ success: true });
